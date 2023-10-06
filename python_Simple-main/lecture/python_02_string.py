@@ -112,3 +112,4 @@ start = url.find(".")+1
 end = url.rfind(".")
 val = url[start:end]
 print(val)
+
