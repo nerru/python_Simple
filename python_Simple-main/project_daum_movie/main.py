@@ -11,6 +11,8 @@
 #   -> 따라서  chrome 드라이버와 같은 브라우저 설정 반드시 필요!
 #     * Selenium은 처음에 웹 브라우저 테스트 용으로 개발
 
+
+from db.movie_dao import add_review
 from datetime import datetime, timedelta
 import math
 import re
@@ -75,7 +77,7 @@ click_cnt = math.ceil((num_review - 10) / 30)
 for i in range(click_cnt):
     #  "평점 더보기" 클릭
     driver.find_element(By.CLASS_NAME, "link_fold").click()
-    time.sleep(1)
+    time.sleep(7)
 
 
 # 8. 전체 소스 코드 가져오기
@@ -106,11 +108,21 @@ for item in review_list:
      reg_hour = int(re.sub(r"[^~0-9]", "",review_date))
     # 3) 등록 일자 = 현재 시간- 17
     #print(f"  -현재시간: {datetime.now()}")
-    review_date = datetime.now() - timedelta(hours=reg_hour)
+     review_date = datetime.now() - timedelta(hours=reg_hour)
     #print(f"등록 시간: {review_date}")
     # 4) 계산된 등록 일자 날짜 포맷 변경(다음 영하 리뷰 날짜 포맷)
-    review_date = review_date.strftime("%Y. %m. %d. %H:%H")
+     review_date = review_date.strftime("%Y. %m. %d. %H:%H")
 
 
-print(f"  -날짜: {review_date}")
+    print(f"  -날짜: {review_date}")
+
+    # MariaDB 저장(제목, 리뷰, 평점, 작성자, 작성 일자)
+    data = {
+        "title": movie_title,
+        "review": review_content,
+        "score": review_score,
+        "writer": review_writer,
+        "reg_date": review_date
+    }
+    add_review(data)
 
