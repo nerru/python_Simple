@@ -23,7 +23,7 @@ def connection():
             db="simple",
             charset="utf8",
             autocommit=True,
-            cursorclass=pymysql.cursoors.DictCursor
+            cursorclass=pymysql.cursors.DictCursor
         )
         return conn
     except pymysql.Error as e:

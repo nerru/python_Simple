@@ -11,6 +11,8 @@
 #   -> 따라서  chrome 드라이버와 같은 브라우저 설정 반드시 필요!
 #     * Selenium은 처음에 웹 브라우저 테스트 용으로 개발
 
+
+from db.movie_dao import add_review
 from datetime import datetime, timedelta
 import math
 import re
@@ -33,7 +35,7 @@ options.add_experimental_option("detach", True)
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),
                           options=options)
 # 2. URL 접속
-url = "https://movie.daum.net/moviedb/grade?movieId=169137"
+url = "https://movie.daum.net/moviedb/grade?movieId=146084"
 driver.get(url)
 time.sleep(2)
 
@@ -99,18 +101,29 @@ for item in review_list:
     print(f"  - 작성자: {review_writer}")
 
     review_date = item.select("span.txt_date")[0].get_text()
-    # 24시간 이내에 작성 된 리뷰의 날짜 -> 24시간전, 3시간전 -> 다음 영화 날짜(2023.11.17. 2:12)
-    #  1) 24시간 전, 17시간 전과 같은 날짜 찾기
-    if len(review_date) < 7:
-        # 2) "17시간" -> 숫자만 추출 17
-     reg_hour = int(re.sub(r"[^~0-9]", "",review_date))
-    # 3) 등록 일자 = 현재 시간- 17
-    #print(f"  -현재시간: {datetime.now()}")
-    review_date = datetime.now() - timedelta(hours=reg_hour)
-    #print(f"등록 시간: {review_date}")
-    # 4) 계산된 등록 일자 날짜 포맷 변경(다음 영하 리뷰 날짜 포맷)
-    review_date = review_date.strftime("%Y. %m. %d. %H:%H")
 
-
+    if review_date == "조금전":
+        review_date = datetime.now() - timedelta(seconds=59)
+        review_date = review_date.strftime("%Y. %m. %d. %H:%H")
+    elif review_date[-2:] == "분전":
+        # 1분전~59분전 -> "분전"
+        reg_minute = int(re.sub(r"[^~0-9]", "", review_date))
+        review_date = datetime.now() - timedelta(minutes=reg_minute)
+        review_date = review_date.strftime("%Y. %m. %d. %H:%H")
+    elif review_date[-3:] == "시간전":
+        # 1tlrkswjs ~23tlrkswjs ->"시간전"
+        reg_hour = int(re.sub(r"[^~0-9]", "", review_date))
+        review_date = datetime.now() - timedelta(hours=reg_hour)
+        review_date = review_date.strftime("%Y. %m. %d. %H:%H")
     print(f"  -날짜: {review_date}")
+
+    # MariaDB 저장(제목, 리뷰, 평점, 작성자, 작성 일자)
+    data = {
+        "title": movie_title,
+        "review": review_content,
+        "score": review_score,
+        "writer": review_writer,
+        "reg_date": review_date
+    }
+    add_review(data)
 
